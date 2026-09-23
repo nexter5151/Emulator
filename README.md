@@ -25,6 +25,7 @@
 | Параметр | Значение | Описание |
 |----------|----------|----------|
 | `VFS_NAME` | `stub-vfs` | Имя VFS, отображается в заголовке окна |
+| `USER_PROMPT` | `stub-vfs$ ` | Приглашение командной строки в GUI |
 
 ### Команды эмулятора
 
@@ -65,19 +66,19 @@ python3 -m unittest discover -s tests -v
 После запуска введите команду в нижнее поле и нажмите Enter.
 
 ```
-$ ls
+stub-vfs$ ls
 ls
 
-$ ls -l /home
+stub-vfs$ ls -l /home
 ls: -l /home
 
-$ cd /tmp
+stub-vfs$ cd /tmp
 cd: /tmp
 
-$ cd
+stub-vfs$ cd
 cd
 
-$ exit
+stub-vfs$ exit
 ```
 
 Окно закрывается.
@@ -85,7 +86,7 @@ $ exit
 ### Обработка ошибок
 
 ```
-$ unknown
+stub-vfs$ unknown
 unknown: command not found
 ```
 
