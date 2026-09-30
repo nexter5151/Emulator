@@ -31,7 +31,9 @@ class TestScriptRunner(unittest.TestCase):
         self.assertEqual(err, out)
 
     def test_read_utf8_script(self) -> None:
-        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", delete=False
+        ) as f:
             f.write("ls\nconf-dump\n")
             path = Path(f.name)
         try:

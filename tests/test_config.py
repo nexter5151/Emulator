@@ -15,7 +15,10 @@ class TestParseArgs(unittest.TestCase):
         self.assertEqual(cfg.vfs_name, "stub-vfs")
 
     def test_vfs_and_script(self) -> None:
-        cfg = parse_args(["--vfs", "/tmp/myvfs", "--script", "/tmp/init.script"])
+        cfg = parse_args([
+            "--vfs", "/tmp/myvfs",
+            "--script", "/tmp/init.script",
+        ])
         self.assertEqual(cfg.vfs_path, Path("/tmp/myvfs"))
         self.assertEqual(cfg.startup_script, Path("/tmp/init.script"))
         self.assertEqual(cfg.vfs_name, "myvfs")

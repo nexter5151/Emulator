@@ -70,7 +70,9 @@ class ShellApp:
                 return
 
     def _execute_dialog_line(self, line: str) -> bool:
-        """Показать ввод/вывод одной строки. True — нужно завершить приложение."""
+        """Показать ввод/вывод одной строки.
+        True — нужно завершить приложение.
+        """
         stripped = line.strip()
         if not stripped:
             return False

@@ -30,8 +30,12 @@ class EmulatorConfig:
         ]
 
     def format_dump(self) -> str:
-        """Форматированный вывод параметров (ключ=значение, по одному на строку)."""
-        return "\n".join(f"{key}={value}" for key, value in self.as_key_values())
+        """Форматированный вывод параметров
+        (ключ=значение, по одному на строку).
+        """
+        return "\n".join(
+            f"{key}={value}" for key, value in self.as_key_values()
+        )
 
 
 def _path_display(path: Path | None) -> str:
@@ -58,7 +62,10 @@ def parse_args(argv: list[str] | None = None) -> EmulatorConfig:
         help="Путь к стартовому скрипту команд эмулятора",
     )
     ns = parser.parse_args(argv)
-    return EmulatorConfig(vfs_path=ns.vfs_path, startup_script=ns.startup_script)
+    return EmulatorConfig(
+        vfs_path=ns.vfs_path,
+        startup_script=ns.startup_script,
+    )
 
 
 def format_startup_debug(config: EmulatorConfig) -> str:
