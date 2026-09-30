@@ -3,6 +3,6 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
-SCRIPT="${ROOT}/examples/startup_ok.script"
+SCRIPT="${ROOT}/examples/startup_with_errors.script"
 echo ">>> python3 -m src.main --script ${SCRIPT}"
 exec python3 -m src.main --script "$SCRIPT"

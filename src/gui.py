@@ -65,11 +65,19 @@ class ShellApp:
             return
 
         assert lines is not None
-        for raw_line in lines:
-            if self._execute_dialog_line(raw_line):
-                return
 
-    def _execute_dialog_line(self, line: str) -> bool:
+        errors = 0
+        for raw_line in lines:
+            result = self._execute_dialog_line(raw_line)
+            if result[1]:
+                errors+=1
+            if result[0]:
+                return
+        if errors>0:
+            self.write("script executed with errors" + "\n")
+
+
+    def _execute_dialog_line(self, line: str) -> bool | tuple[bool, bool]:
         """Показать ввод/вывод одной строки.
         True — нужно завершить приложение.
         """
@@ -81,11 +89,13 @@ class ShellApp:
         text, should_exit, error = execute_script_line(
             stripped, config=self.config
         )
+        with_error = False
         if text:
             self.write(text + "\n")
         if error is not None:
+            with_error = True
             self.write("script error: " + error + "\n")
-        return should_exit
+        return should_exit, with_error
 
     def write(self, text: str) -> None:
         """Вывести текст в область терминала с автоматической прокруткой."""
