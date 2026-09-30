@@ -1,0 +1,5 @@
+ls
+badcmd
+cd /var
+unknown_command arg1
+conf-dump

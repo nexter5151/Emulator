@@ -1,22 +1,29 @@
 """Обработка команд эмулятора командной строки."""
 
+from __future__ import annotations
 
-def run_command(command: str, args: list[str]) -> tuple[str, bool]:
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.config import EmulatorConfig
+
+
+def run_command(
+    command: str,
+    args: list[str],
+    config: EmulatorConfig,
+) -> tuple[str, bool]:
     """Выполнить команду эмулятора с переданными аргументами.
-
-    Команды ls и cd работают в режиме заглушек и выводят имя команды
-    вместе с переданными аргументами. Команда exit сигнализирует
-    о завершении работы программы.
 
     Args:
         command: Название вызываемой команды.
         args: Список строковых аргументов команды.
+        config: Текущая конфигурация эмулятора.
 
     Returns:
         Кортеж из двух элементов:
             - str: сообщение о результате выполнения команды или ошибка;
-            - bool: флаг завершения работы (True для команды exit,
-              иначе False).
+            - bool: флаг завершения работы (True для команды exit).
     """
     if command == "ls":
         if args:
@@ -27,6 +34,9 @@ def run_command(command: str, args: list[str]) -> tuple[str, bool]:
         if args:
             return "cd: " + " ".join(args), False
         return "cd", False
+
+    if command == "conf-dump":
+        return config.format_dump(), False
 
     if command == "exit":
         return "", True
