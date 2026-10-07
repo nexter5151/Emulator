@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vfs name="unix">
+  <directory name="home">
+    <directory name="user">
+      <directory name="data">
+        <file name="notes.txt" encoding="text">hello world
+line two</file>
+        <file name="secret.bin" encoding="base64">c2VjcmV0</file>
+        <file name=".hidden" encoding="text">hidden value</file>
+      </directory>
+      <file name="profile.txt" encoding="text">export PATH</file>
+      <file name=".bashrc" encoding="text">alias ll='ls -la'</file>
+    </directory>
+  </directory>
+  <directory name="tmp">
+    <file name="scratch.txt" encoding="text">abc</file>
+  </directory>
+  <file name="readme.txt" encoding="text">root readme</file>
+</vfs>

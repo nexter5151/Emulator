@@ -1,0 +1,31 @@
+conf-dump
+ls
+ls -a
+ls -l
+ls -lh
+ls -la
+ls -hl
+ls -lah
+cd home/user/data
+ls
+ls -la
+cat notes.txt
+rev notes.txt
+du
+du -h
+du .
+cat .hidden
+cd ../..
+ls
+cd /home/user/data/../data
+ls -l notes.txt
+cd /
+ls home/user/data
+cat missing.txt
+cd no/such/path
+cd readme.txt
+ls -z
+du /home/user
+vfs-tree /home/user/data
+conf-dump
+exit

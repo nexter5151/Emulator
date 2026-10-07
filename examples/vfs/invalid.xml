@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vfs name="invalid">
+  <file name="x.txt" encoding="text">unclosed
+</vfs>

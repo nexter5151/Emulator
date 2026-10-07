@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vfs name="deep">
+  <directory name="level1">
+    <directory name="level2">
+      <directory name="level3">
+        <file name="leaf.txt" encoding="text">depth 3</file>
+        <file name="payload.bin" encoding="base64">aGVsbG8=</file>
+      </directory>
+      <file name="mid.txt" encoding="text">level 2</file>
+    </directory>
+  </directory>
+  <file name="root.txt" encoding="text">root</file>
+</vfs>

@@ -3,9 +3,9 @@
 ## 1. Общее описание
 
 Эмулятор командной оболочки UNIX-подобной ОС (вариант №4).
-Реализованы этапы 1–3: REPL в GUI, параметры командной строки,
-стартовый скрипт, служебные команды `conf-dump` и `vfs-tree`,
-загрузка виртуальной файловой системы (VFS) из XML в память.
+Реализованы этапы 1–4: REPL в GUI, параметры командной строки,
+стартовый скрипт, VFS из XML в памяти, команды `ls`, `cd`, `cat`,
+`rev`, `du`, служебные `conf-dump` и `vfs-tree`.
 
 Язык реализации: Python 3.
 Интерфейс: tkinter (стандартная библиотека).
@@ -19,81 +19,82 @@
 | `src/main.py` | Точка входа, создание runtime и запуск GUI |
 | `src/gui.py` | Графический интерфейс (окно, ввод, вывод) |
 | `src/parser.py` | Парсер: разбивает строку на команду и аргументы |
-| `src/commands.py` | Команды `ls`, `cd`, `conf-dump`, `vfs-tree`, `exit` |
+| `src/commands.py` | Команды оболочки и служебные команды |
 | `src/config.py` | Параметры командной строки и отладочный вывод |
-| `src/runtime.py` | Состояние эмулятора: config + загруженная VFS |
-| `src/vfs.py` | Модель VFS в памяти и разбор XML |
+| `src/runtime.py` | Состояние: config, VFS, текущий каталог cwd |
+| `src/vfs.py` | Модель VFS, XML, пути, размеры |
 | `src/script_runner.py` | Чтение и выполнение стартового скрипта |
 
 ### Формат XML VFS
 
 Корневой элемент — `<vfs name="имя">`. Внутри — вложенные
-`<directory name="...">` и `<file name="..." encoding="text|base64">`.
+`<directory name="...">` и
+`<file name="..." encoding="text|base64">`.
 Текст файла — тело элемента; для двоичных данных — base64.
 Данные только в памяти, исходный файл на диске не изменяется.
 
-Примеры: `examples/vfs/minimal.xml`, `multi.xml`, `deep.xml`.
+Примеры: `examples/vfs/minimal.xml`, `multi.xml`, `deep.xml`,
+`unix.xml` (для этапа 4: `home/user/data`).
 
-### Описание функций (этап 3)
+### Описание функций (этап 4)
 
 #### `src/vfs.py`
 
 | Имя | Назначение |
 |-----|------------|
-| `load_vfs(path)` | Загрузка XML; ошибки «no such file», «invalid XML format», «invalid format». |
+| `normalize_path(cwd, path)` | Абсолютный путь с учётом `.`, `..` и относительных сегментов. |
 | `resolve_path(vfs, path)` | Поиск узла по абсолютному пути. |
-| `format_tree(vfs, start="/")` | Дерево каталогов для команды `vfs-tree`. |
+| `node_size(node)` | Размер файла или сумма содержимого каталога. |
+| `human_size(size)` | Размер в виде `12B`, `1.5K`, … |
+| `format_tree(vfs, start)` | Дерево каталогов для `vfs-tree`. |
 
 #### `src/runtime.py`
 
 | Имя | Назначение |
 |-----|------------|
-| `EmulatorRuntime` | Config, объект VFS и текст ошибки загрузки. |
-| `EmulatorRuntime.from_config(config)` | Загрузка VFS по `config.vfs_path`. |
-| `EmulatorRuntime.vfs_name` | Имя из XML (`name`) или из пути / `stub-vfs`. |
-| `format_conf_dump()` | `conf-dump` с полями `vfs_loaded`, `vfs_load_error`. |
+| `EmulatorRuntime` | Config, VFS, ошибка загрузки, `cwd`. |
+| `absolute_path(path)` | Путь относительно текущего каталога. |
+| `lookup(path)` | Поиск узла по относительному/абсолютному пути. |
+| `format_conf_dump()` | Параметры + `cwd` + статус VFS. |
 
-#### `src/commands.py` (этап 3)
-
-| Имя | Назначение |
-|-----|------------|
-| `run_command(..., runtime)` | Принимает `EmulatorRuntime` вместо `EmulatorConfig`. |
-| `vfs-tree [path]` | Дерево VFS; без `--vfs` — сообщение, что VFS не загружена. |
-
-#### `src/gui.py` (этап 3)
+#### `src/commands.py` (этап 4)
 
 | Имя | Назначение |
 |-----|------------|
-| `ShellApp(runtime)` | Заголовок и приглашение из `runtime.vfs_name`. |
-| `_emit_vfs_load_status()` | Вывод ошибки загрузки VFS при старте. |
+| `ls [-alh] [path…]` | Список каталога/файла; флаги `-a`, `-l`, `-h` и комбинации. |
+| `cd [path]` | Смена каталога; относительные пути и `..`. |
+| `cat file…` | Вывод содержимого файла. |
+| `rev file…` | Реверс символов в каждой строке файла. |
+| `du [-h] [path…]` | Размер файла/каталога. |
 
 ### Параметры командной строки
 
 | Параметр | Описание |
 |----------|----------|
 | `--vfs PATH` | Путь к XML-файлу VFS |
-| `--script PATH` | Путь к стартовому скрипту (команды по одной на строку) |
+| `--script PATH` | Путь к стартовому скрипту |
 
-При запуске в окне и в stderr выводится блок `[config]` со всеми
-параметрами. Без `--vfs` имя VFS по умолчанию — `stub-vfs`.
+При запуске выводится блок `[config]`. Без `--vfs` имя —
+`stub-vfs`. Приглашение: `имя_vfs:cwd$`.
 
 ### Команды эмулятора
 
 | Команда | Описание |
 |---------|----------|
-| `ls [аргументы]` | Заглушка: выводит имя команды и аргументы |
-| `cd [аргументы]` | Заглушка: выводит имя команды и аргументы |
+| `ls [-alh] [path…]` | Содержимое каталога; `-a` скрытые, `-l` подробно, `-h` размеры |
+| `cd [path]` | Смена текущего каталога VFS |
+| `cat file…` | Печать файла |
+| `rev file…` | Печать файла с реверсом строк |
+| `du [-h] [path…]` | Размер в байтах или human-readable |
 | `conf-dump` | Параметры эмулятора и статус VFS |
-| `vfs-tree [path]` | Дерево каталогов загруженной VFS (этап 3) |
-| `exit` | Завершение работы приложения |
+| `vfs-tree [path]` | Дерево каталогов VFS |
+| `exit` | Завершение работы |
 
-Неизвестная команда выводит сообщение об ошибке:
-`<команда>: command not found`.
+Неизвестная команда: `<команда>: command not found`.
 
 ## 3. Сборка и запуск
 
-Сборка не требуется — проект использует только стандартную
-библиотеку Python.
+Сборка не требуется — только стандартная библиотека Python.
 
 ### Запуск приложения
 
@@ -102,10 +103,12 @@
 ```
 
 ```bash
-python3 -m src.main --vfs examples/vfs/deep.xml --script examples/startup_stage3.script
+python3 -m src.main \
+  --vfs examples/vfs/unix.xml \
+  --script examples/startup_stage4.script
 ```
 
-### Скрипты проверки (этапы 2–3)
+### Скрипты проверки
 
 ```bash
 chmod +x scripts/*.sh
@@ -120,6 +123,7 @@ chmod +x scripts/*.sh
 ./scripts/test_vfs_missing.sh
 ./scripts/test_vfs_invalid.sh
 ./scripts/test_vfs_duplicate.sh
+./scripts/test_stage4.sh
 ```
 
 ### Запуск тестов
@@ -130,45 +134,54 @@ python3 -m unittest discover -s tests -v
 
 ## 4. Примеры использования
 
-После запуска введите команду в нижнее поле и нажмите Enter.
+```
+unix:/$ ls
+home
+readme.txt
+tmp
+
+unix:/$ ls -la home/user
+drwxr-xr-x        0 .
+drwxr-xr-x        0 ..
+-rw-r--r--       16 .bashrc
+drwxr-xr-x       … data
+-rw-r--r--       11 profile.txt
+
+unix:/$ cd home/user/data
+unix:/home/user/data$ cat notes.txt
+hello world
+line two
+
+unix:/home/user/data$ rev notes.txt
+dlrow olleh
+owt enil
+
+unix:/home/user/data$ ls -lh
+-rw-r--r--      12B .hidden
+-rw-r--r--      18B notes.txt
+-rw-r--r--       6B secret.bin
+
+unix:/home/user/data$ du -h
+…	/home/user/data
+```
+
+### Обработка ошибок
 
 ```
-minimal$ ls
-ls
+unix:/$ cd no/such
+cd: no/such: No such file or directory
 
-minimal$ vfs-tree
-/
-/only.txt  [file]
+unix:/$ cd readme.txt
+cd: readme.txt: Not a directory
 
-minimal$ conf-dump
-vfs_path=examples/vfs/minimal.xml
-startup_script=
-vfs_name=minimal
-vfs_loaded=yes
+unix:/$ cat missing.txt
+cat: missing.txt: No such file or directory
+
+unix:/$ ls -z
+ls: invalid option -- 'z'
 ```
 
-### Ошибка загрузки VFS
+### Стартовый скрипт этапа 4
 
-```
-deep$ 
-vfs: examples/vfs/no-such-vfs.xml: no such file
-```
-
-При неверном XML или дубликатах имён в каталоге выводится
-`vfs: ...: invalid XML format` или `vfs: ...: invalid format: ...`.
-
-### Стартовый скрипт этапа 3
-
-Файл `examples/startup_stage3.script` — команды этапов 1–3,
-`vfs-tree`, ошибочная команда и `conf-dump`.
-
-```
-deep$ conf-dump
-...
-deep$ vfs-tree /level1/level2/level3
-/level1/level2/level3
-/level1/level2/level3/leaf.txt  [file]
-deep$ unknown-cmd
-unknown-cmd: command not found
-script error: unknown-cmd: command not found
-```
+Файл `examples/startup_stage4.script` — режимы `ls`/`cd`/`cat`/
+`rev`/`du`, вложенные пути и ошибки.

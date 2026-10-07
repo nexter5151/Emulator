@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vfs name="multi">
+  <file name="alpha.txt" encoding="text">A</file>
+  <file name="beta.txt" encoding="text">B</file>
+  <directory name="docs">
+    <file name="readme.txt" encoding="text">readme</file>
+    <file name="icon.bin" encoding="base64">AQIDBA==</file>
+  </directory>
+</vfs>

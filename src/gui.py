@@ -22,7 +22,6 @@ class ShellApp:
     def __init__(self, runtime: EmulatorRuntime) -> None:
         """Инициализировать главное окно приложения и его компоненты."""
         self.runtime = runtime
-        self.user_prompt = runtime.vfs_name + "$ "
 
         self.root = tk.Tk()
         self.root.title("Shell Emulator — " + runtime.vfs_name)
@@ -36,8 +35,9 @@ class ShellApp:
         input_frame = tk.Frame(self.root)
         input_frame.pack(fill=tk.X, padx=5, pady=5)
 
-        self.prompt_label = tk.Label(input_frame, text=self.user_prompt)
+        self.prompt_label = tk.Label(input_frame)
         self.prompt_label.pack(side=tk.LEFT)
+        self._refresh_prompt()
 
         self.input = tk.Entry(input_frame)
         self.input.pack(side=tk.LEFT, fill=tk.X, expand=True)
@@ -48,6 +48,15 @@ class ShellApp:
         self._emit_startup_debug()
         self._emit_vfs_load_status()
         self._run_startup_script()
+
+    def _make_prompt(self) -> str:
+        """Текст приглашения: имя VFS и текущий каталог."""
+        return f"{self.runtime.vfs_name}:{self.runtime.cwd}$ "
+
+    def _refresh_prompt(self) -> None:
+        """Обновить приглашение после смены cwd."""
+        self.user_prompt = self._make_prompt()
+        self.prompt_label.configure(text=self.user_prompt)
 
     def _emit_startup_debug(self) -> None:
         """Отладочный вывод параметров при запуске (GUI и stderr)."""
@@ -106,6 +115,7 @@ class ShellApp:
         if error is not None:
             with_error = True
             self.write("script error: " + error + "\n")
+        self._refresh_prompt()
         return should_exit, with_error
 
     def write(self, text: str) -> None:
@@ -129,6 +139,7 @@ class ShellApp:
         text, should_exit = run_command(command, args, self.runtime)
         if text:
             self.write(text + "\n")
+        self._refresh_prompt()
         if should_exit:
             self.root.destroy()
 
