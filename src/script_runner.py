@@ -5,8 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from src.commands import run_command
-from src.config import EmulatorConfig
 from src.parser import parse_input
+from src.runtime import EmulatorRuntime
 
 
 def read_script_lines(path: Path) -> tuple[list[str] | None, str | None]:
@@ -27,7 +27,7 @@ def read_script_lines(path: Path) -> tuple[list[str] | None, str | None]:
 def execute_script_line(
     line: str,
     *,
-    config: EmulatorConfig,
+    runtime: EmulatorRuntime,
 ) -> tuple[str, bool, str | None]:
     """Выполнить одну строку скрипта.
 
@@ -39,7 +39,7 @@ def execute_script_line(
     if command is None:
         return "", False, None
 
-    text, should_exit = run_command(command, args, config)
+    text, should_exit = run_command(command, args, runtime)
     error: str | None = None
     if text and "command not found" in text:
         error = text

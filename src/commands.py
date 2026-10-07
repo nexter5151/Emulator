@@ -2,23 +2,21 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from src.config import EmulatorConfig
+from src.runtime import EmulatorRuntime
+from src.vfs import format_tree
 
 
 def run_command(
     command: str,
     args: list[str],
-    config: EmulatorConfig,
+    runtime: EmulatorRuntime,
 ) -> tuple[str, bool]:
     """Выполнить команду эмулятора с переданными аргументами.
 
     Args:
         command: Название вызываемой команды.
         args: Список строковых аргументов команды.
-        config: Текущая конфигурация эмулятора.
+        runtime: Конфигурация и состояние VFS.
 
     Returns:
         Кортеж из двух элементов:
@@ -36,9 +34,21 @@ def run_command(
         return "cd", False
 
     if command == "conf-dump":
-        return config.format_dump(), False
+        return runtime.format_conf_dump(), False
+
+    if command == "vfs-tree":
+        return _cmd_vfs_tree(args, runtime), False
 
     if command == "exit":
         return "", True
 
     return command + ": command not found", False
+
+
+def _cmd_vfs_tree(args: list[str], runtime: EmulatorRuntime) -> str:
+    if runtime.vfs is None:
+        if runtime.vfs_load_error is not None:
+            return runtime.vfs_load_error
+        return "vfs-tree: VFS is not loaded"
+    path = args[0] if args else "/"
+    return format_tree(runtime.vfs, path)

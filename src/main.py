@@ -2,11 +2,13 @@
 
 from src.config import parse_args
 from src.gui import ShellApp
+from src.runtime import EmulatorRuntime
 
 
 def main() -> None:
     config = parse_args()
-    app = ShellApp(config)
+    runtime = EmulatorRuntime.from_config(config)
+    app = ShellApp(runtime)
     app.run()
 
 

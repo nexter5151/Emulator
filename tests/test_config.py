@@ -5,6 +5,7 @@ from pathlib import Path
 
 from src.commands import run_command
 from src.config import EmulatorConfig, format_startup_debug, parse_args
+from src.runtime import EmulatorRuntime
 
 
 class TestParseArgs(unittest.TestCase):
@@ -37,9 +38,11 @@ class TestConfDump(unittest.TestCase):
 
     def test_conf_dump_command(self) -> None:
         cfg = EmulatorConfig(vfs_path=None, startup_script=None)
-        out, exit_flag = run_command("conf-dump", [], cfg)
+        runtime = EmulatorRuntime.from_config(cfg)
+        out, exit_flag = run_command("conf-dump", [], runtime)
         self.assertFalse(exit_flag)
         self.assertIn("vfs_name=stub-vfs", out)
+        self.assertIn("vfs_loaded=no", out)
 
 
 class TestStartupDebug(unittest.TestCase):

@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 
 from src.config import EmulatorConfig
+from src.runtime import EmulatorRuntime
 from src.script_runner import execute_script_line, read_script_lines
 
 
@@ -17,15 +18,19 @@ class TestScriptRunner(unittest.TestCase):
         self.assertIn("no such file", err)
 
     def test_skip_empty_line_logic(self) -> None:
-        cfg = EmulatorConfig(vfs_path=None, startup_script=None)
-        out, exit_flag, err = execute_script_line("   ", config=cfg)
+        runtime = EmulatorRuntime.from_config(
+            EmulatorConfig(vfs_path=None, startup_script=None)
+        )
+        out, exit_flag, err = execute_script_line("   ", runtime=runtime)
         self.assertEqual(out, "")
         self.assertFalse(exit_flag)
         self.assertIsNone(err)
 
     def test_command_error_reported(self) -> None:
-        cfg = EmulatorConfig(vfs_path=None, startup_script=None)
-        out, exit_flag, err = execute_script_line("nope", config=cfg)
+        runtime = EmulatorRuntime.from_config(
+            EmulatorConfig(vfs_path=None, startup_script=None)
+        )
+        out, exit_flag, err = execute_script_line("nope", runtime=runtime)
         self.assertIn("command not found", out)
         self.assertFalse(exit_flag)
         self.assertEqual(err, out)
