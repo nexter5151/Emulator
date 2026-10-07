@@ -3,9 +3,9 @@
 ## 1. Общее описание
 
 Эмулятор командной оболочки UNIX-подобной ОС (вариант №4).
-Реализованы этапы 1–4: REPL в GUI, параметры командной строки,
+Реализованы этапы 1–5: REPL в GUI, параметры командной строки,
 стартовый скрипт, VFS из XML в памяти, команды `ls`, `cd`, `cat`,
-`rev`, `du`, служебные `conf-dump` и `vfs-tree`.
+`rev`, `du`, `mkdir`, `help`, служебные `conf-dump` и `vfs-tree`.
 
 Язык реализации: Python 3.
 Интерфейс: tkinter (стандартная библиотека).
@@ -22,7 +22,7 @@
 | `src/commands.py` | Команды оболочки и служебные команды |
 | `src/config.py` | Параметры командной строки и отладочный вывод |
 | `src/runtime.py` | Состояние: config, VFS, текущий каталог cwd |
-| `src/vfs.py` | Модель VFS, XML, пути, размеры |
+| `src/vfs.py` | Модель VFS, XML, пути, размеры, mkdir |
 | `src/script_runner.py` | Чтение и выполнение стартового скрипта |
 
 ### Формат XML VFS
@@ -32,40 +32,28 @@
 `<file name="..." encoding="text|base64">`.
 Текст файла — тело элемента; для двоичных данных — base64.
 Данные только в памяти, исходный файл на диске не изменяется.
+Команда `mkdir` тоже меняет только память.
 
 Примеры: `examples/vfs/minimal.xml`, `multi.xml`, `deep.xml`,
-`unix.xml` (для этапа 4: `home/user/data`).
+`unix.xml`.
 
-### Описание функций (этап 4)
+### Описание функций (этап 5)
 
 #### `src/vfs.py`
 
 | Имя | Назначение |
 |-----|------------|
-| `normalize_path(cwd, path)` | Абсолютный путь с учётом `.`, `..` и относительных сегментов. |
+| `create_directory(vfs, path, parents)` | Создание каталога в памяти; `-p` через `parents`. |
+| `normalize_path(cwd, path)` | Абсолютный путь с `.`, `..` и относительными сегментами. |
 | `resolve_path(vfs, path)` | Поиск узла по абсолютному пути. |
-| `node_size(node)` | Размер файла или сумма содержимого каталога. |
-| `human_size(size)` | Размер в виде `12B`, `1.5K`, … |
-| `format_tree(vfs, start)` | Дерево каталогов для `vfs-tree`. |
+| `node_size` / `human_size` | Размеры для `ls -lh` и `du`. |
 
-#### `src/runtime.py`
+#### `src/commands.py` (этап 5)
 
 | Имя | Назначение |
 |-----|------------|
-| `EmulatorRuntime` | Config, VFS, ошибка загрузки, `cwd`. |
-| `absolute_path(path)` | Путь относительно текущего каталога. |
-| `lookup(path)` | Поиск узла по относительному/абсолютному пути. |
-| `format_conf_dump()` | Параметры + `cwd` + статус VFS. |
-
-#### `src/commands.py` (этап 4)
-
-| Имя | Назначение |
-|-----|------------|
-| `ls [-alh] [path…]` | Список каталога/файла; флаги `-a`, `-l`, `-h` и комбинации. |
-| `cd [path]` | Смена каталога; относительные пути и `..`. |
-| `cat file…` | Вывод содержимого файла. |
-| `rev file…` | Реверс символов в каждой строке файла. |
-| `du [-h] [path…]` | Размер файла/каталога. |
+| `mkdir [-p] path…` | Создать каталог(и) только в памяти. |
+| `help [cmd…]` | Список команд и краткие описания. |
 
 ### Параметры командной строки
 
@@ -81,11 +69,13 @@
 
 | Команда | Описание |
 |---------|----------|
-| `ls [-alh] [path…]` | Содержимое каталога; `-a` скрытые, `-l` подробно, `-h` размеры |
+| `ls [-alh] [path…]` | Содержимое каталога; `-a`, `-l`, `-h` |
 | `cd [path]` | Смена текущего каталога VFS |
 | `cat file…` | Печать файла |
 | `rev file…` | Печать файла с реверсом строк |
 | `du [-h] [path…]` | Размер в байтах или human-readable |
+| `mkdir [-p] path…` | Создать каталог (только в памяти) |
+| `help [cmd…]` | Справка по командам |
 | `conf-dump` | Параметры эмулятора и статус VFS |
 | `vfs-tree [path]` | Дерево каталогов VFS |
 | `exit` | Завершение работы |
@@ -105,7 +95,7 @@
 ```bash
 python3 -m src.main \
   --vfs examples/vfs/unix.xml \
-  --script examples/startup_stage4.script
+  --script examples/startup_stage5.script
 ```
 
 ### Скрипты проверки
@@ -124,6 +114,7 @@ chmod +x scripts/*.sh
 ./scripts/test_vfs_invalid.sh
 ./scripts/test_vfs_duplicate.sh
 ./scripts/test_stage4.sh
+./scripts/test_stage5.sh
 ```
 
 ### Запуск тестов
@@ -135,53 +126,38 @@ python3 -m unittest discover -s tests -v
 ## 4. Примеры использования
 
 ```
-unix:/$ ls
-home
-readme.txt
-tmp
+unix:/$ help
+ls — list directory contents (-a, -l, -h)
+...
+mkdir — create directory (-p for parents)
+help — show this command list
 
-unix:/$ ls -la home/user
-drwxr-xr-x        0 .
-drwxr-xr-x        0 ..
--rw-r--r--       16 .bashrc
-drwxr-xr-x       … data
--rw-r--r--       11 profile.txt
+unix:/$ mkdir newdir
+unix:/$ mkdir -p deep/a/b/c
+unix:/$ ls deep/a/b
+c
 
 unix:/$ cd home/user/data
 unix:/home/user/data$ cat notes.txt
 hello world
 line two
-
-unix:/home/user/data$ rev notes.txt
-dlrow olleh
-owt enil
-
-unix:/home/user/data$ ls -lh
--rw-r--r--      12B .hidden
--rw-r--r--      18B notes.txt
--rw-r--r--       6B secret.bin
-
-unix:/home/user/data$ du -h
-…	/home/user/data
 ```
 
 ### Обработка ошибок
 
 ```
-unix:/$ cd no/such
-cd: no/such: No such file or directory
+unix:/$ mkdir home
+mkdir: cannot create directory 'home': File exists
 
-unix:/$ cd readme.txt
-cd: readme.txt: Not a directory
+unix:/$ mkdir no/such
+mkdir: cannot create directory 'no/such': No such file or directory
 
-unix:/$ cat missing.txt
-cat: missing.txt: No such file or directory
-
-unix:/$ ls -z
-ls: invalid option -- 'z'
+unix:/$ help nope
+help: no help for 'nope'
 ```
 
-### Стартовый скрипт этапа 4
+### Стартовые скрипты
 
-Файл `examples/startup_stage4.script` — режимы `ls`/`cd`/`cat`/
-`rev`/`du`, вложенные пути и ошибки.
+- этап 4: `examples/startup_stage4.script`
+- этап 5: `examples/startup_stage5.script` — `help`, `mkdir`,
+  `-p`, ошибки и `vfs-tree`

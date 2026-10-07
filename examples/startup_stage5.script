@@ -1,0 +1,26 @@
+help
+help mkdir
+help unknown
+ls
+mkdir newdir
+ls
+cd newdir
+mkdir nested
+ls
+cd /
+mkdir -p deep/a/b/c
+ls deep/a/b
+cd deep/a/b/c
+mkdir ../../x
+cd /
+ls deep/a
+mkdir newdir
+mkdir readme.txt
+mkdir -p missing/parent/child
+mkdir no/such/path
+mkdir -z
+cd deep/a/b/c
+ls
+vfs-tree /deep
+conf-dump
+exit

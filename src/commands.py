@@ -7,10 +7,24 @@ from src.vfs import (
     VfsDirectory,
     VfsFile,
     VfsNode,
+    create_directory,
     format_tree,
     human_size,
     node_size,
 )
+
+_COMMAND_HELP: list[tuple[str, str]] = [
+    ("ls", "list directory contents (-a, -l, -h)"),
+    ("cd", "change current directory"),
+    ("cat", "print file contents"),
+    ("rev", "reverse characters on each line"),
+    ("du", "estimate file/directory space usage (-h)"),
+    ("mkdir", "create directory (-p for parents)"),
+    ("help", "show this command list"),
+    ("conf-dump", "print emulator parameters"),
+    ("vfs-tree", "print VFS directory tree"),
+    ("exit", "exit the emulator"),
+]
 
 
 def run_command(
@@ -36,6 +50,8 @@ def run_command(
         "cat": _cmd_cat,
         "rev": _cmd_rev,
         "du": _cmd_du,
+        "mkdir": _cmd_mkdir,
+        "help": _cmd_help,
         "conf-dump": lambda a, r: r.format_conf_dump(),
         "vfs-tree": _cmd_vfs_tree,
     }
@@ -261,3 +277,65 @@ def _du_one(
     size_text = human_size(size) if human else str(size)
     shown = runtime.absolute_path(path)
     return f"{size_text}\t{shown}"
+
+
+def _cmd_help(args: list[str], runtime: EmulatorRuntime) -> str:
+    if not args:
+        return "\n".join(
+            f"{name} — {desc}" for name, desc in _COMMAND_HELP
+        )
+    lines: list[str] = []
+    known = dict(_COMMAND_HELP)
+    for name in args:
+        desc = known.get(name)
+        if desc is None:
+            lines.append(f"help: no help for '{name}'")
+        else:
+            lines.append(f"{name} — {desc}")
+    return "\n".join(lines)
+
+
+def _cmd_mkdir(args: list[str], runtime: EmulatorRuntime) -> str:
+    err = _require_vfs(runtime, "mkdir")
+    if err is not None:
+        return err
+    parents, paths, opt_err = _parse_mkdir_args(args)
+    if opt_err is not None:
+        return opt_err
+    if not paths:
+        return "mkdir: missing operand"
+    assert runtime.vfs is not None
+    errors: list[str] = []
+    for path in paths:
+        msg = _mkdir_one(runtime, path, parents)
+        if msg:
+            errors.append(msg)
+    return "\n".join(errors)
+
+
+def _parse_mkdir_args(
+    args: list[str],
+) -> tuple[bool, list[str], str | None]:
+    parents = False
+    paths: list[str] = []
+    for arg in args:
+        if arg == "-p":
+            parents = True
+        elif arg.startswith("-") and arg != "-":
+            return False, [], f"mkdir: invalid option -- '{arg[1:]}'"
+        else:
+            paths.append(arg)
+    return parents, paths, None
+
+
+def _mkdir_one(
+    runtime: EmulatorRuntime,
+    path: str,
+    parents: bool,
+) -> str:
+    assert runtime.vfs is not None
+    abs_path = runtime.absolute_path(path)
+    error = create_directory(runtime.vfs, abs_path, parents)
+    if error is None:
+        return ""
+    return f"mkdir: cannot create directory '{path}': {error}"

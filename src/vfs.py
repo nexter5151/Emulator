@@ -156,6 +156,50 @@ def resolve_path(vfs: VirtualFileSystem, path: str) -> VfsNode | None:
     return current
 
 
+def create_directory(
+    vfs: VirtualFileSystem,
+    abs_path: str,
+    parents: bool,
+) -> str | None:
+    """Создать каталог в памяти. None — успех, иначе текст ошибки."""
+    if abs_path == "/":
+        if parents:
+            return None
+        return "File exists"
+    parts = [p for p in abs_path.split("/") if p]
+    current = vfs.root
+    last_index = len(parts) - 1
+    for index, part in enumerate(parts):
+        is_last = index == last_index
+        error = _mkdir_step(current, part, is_last, parents)
+        if error is not None:
+            return error
+        child = current.children[part]
+        assert isinstance(child, VfsDirectory)
+        current = child
+    return None
+
+
+def _mkdir_step(
+    current: VfsDirectory,
+    part: str,
+    is_last: bool,
+    parents: bool,
+) -> str | None:
+    """Один шаг создания пути для mkdir."""
+    child = current.children.get(part)
+    if child is None:
+        if not parents and not is_last:
+            return "No such file or directory"
+        current.children[part] = VfsDirectory(name=part)
+        return None
+    if isinstance(child, VfsFile):
+        return "File exists"
+    if is_last and not parents:
+        return "File exists"
+    return None
+
+
 def node_size(node: VfsNode) -> int:
     """Размер файла или суммарный размер каталога (рекурсивно)."""
     if isinstance(node, VfsFile):

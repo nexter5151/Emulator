@@ -1,4 +1,4 @@
-"""Тесты команд этапа 4: ls, cd, cat, rev, du."""
+"""Тесты команд этапов 4–5: ls, cd, cat, rev, du, mkdir, help."""
 
 import unittest
 from pathlib import Path
@@ -111,6 +111,56 @@ class TestCatRevDu(unittest.TestCase):
         size_part = out.split("\t")[0]
         self.assertTrue(size_part.isdigit())
         self.assertGreater(int(size_part), 0)
+
+
+class TestMkdir(unittest.TestCase):
+    def test_create_and_list(self) -> None:
+        rt = _runtime()
+        out, _ = run_command("mkdir", ["workdir"], rt)
+        self.assertEqual(out, "")
+        listing, _ = run_command("ls", [], rt)
+        self.assertIn("workdir", listing)
+
+    def test_parents(self) -> None:
+        rt = _runtime()
+        out, _ = run_command("mkdir", ["-p", "a/b/c"], rt)
+        self.assertEqual(out, "")
+        node = rt.lookup("a/b/c")
+        self.assertIsNotNone(node)
+
+    def test_exists_error(self) -> None:
+        rt = _runtime()
+        out, _ = run_command("mkdir", ["home"], rt)
+        self.assertIn("File exists", out)
+
+    def test_missing_parent(self) -> None:
+        rt = _runtime()
+        out, _ = run_command("mkdir", ["no/such"], rt)
+        self.assertIn("No such file", out)
+
+    def test_file_as_path(self) -> None:
+        rt = _runtime()
+        out, _ = run_command("mkdir", ["readme.txt"], rt)
+        self.assertIn("File exists", out)
+
+
+class TestHelp(unittest.TestCase):
+    def test_lists_commands(self) -> None:
+        rt = _runtime()
+        out, _ = run_command("help", [], rt)
+        self.assertIn("mkdir", out)
+        self.assertIn("help", out)
+        self.assertIn("ls", out)
+
+    def test_one_command(self) -> None:
+        rt = _runtime()
+        out, _ = run_command("help", ["cd"], rt)
+        self.assertIn("cd —", out)
+
+    def test_unknown(self) -> None:
+        rt = _runtime()
+        out, _ = run_command("help", ["nope"], rt)
+        self.assertIn("no help", out)
 
 
 if __name__ == "__main__":
