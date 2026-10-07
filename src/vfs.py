@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import base64
 import binascii
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as element_tree
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Union
+
+_SIZE_UNIT_BASE = 1024
 
 
 @dataclass
@@ -54,8 +56,8 @@ def load_vfs(
     except OSError as exc:
         return None, f"vfs: {path}: {exc}"
     try:
-        element = ET.fromstring(raw)
-    except ET.ParseError:
+        element = element_tree.fromstring(raw)
+    except element_tree.ParseError:
         return None, f"vfs: {path}: invalid XML format"
     try:
         return _parse_vfs_element(element, path), None
@@ -63,7 +65,10 @@ def load_vfs(
         return None, f"vfs: {path}: invalid format: {exc}"
 
 
-def _parse_vfs_element(element: ET.Element, path: Path) -> VirtualFileSystem:
+def _parse_vfs_element(
+    element: element_tree.Element,
+    path: Path,
+) -> VirtualFileSystem:
     if element.tag != "vfs":
         raise ValueError("root element must be <vfs>")
     name = element.get("name") or path.stem or "vfs"
@@ -74,7 +79,7 @@ def _parse_vfs_element(element: ET.Element, path: Path) -> VirtualFileSystem:
     return VirtualFileSystem(name=name, root=root)
 
 
-def _parse_node(element: ET.Element) -> VfsNode:
+def _parse_node(element: element_tree.Element) -> VfsNode:
     if element.tag == "directory":
         return _parse_directory(element)
     if element.tag == "file":
@@ -82,7 +87,7 @@ def _parse_node(element: ET.Element) -> VfsNode:
     raise ValueError(f"unknown element <{element.tag}>")
 
 
-def _parse_directory(element: ET.Element) -> VfsDirectory:
+def _parse_directory(element: element_tree.Element) -> VfsDirectory:
     dir_name = element.get("name")
     if not dir_name:
         raise ValueError("directory without name")
@@ -93,7 +98,7 @@ def _parse_directory(element: ET.Element) -> VfsDirectory:
     return directory
 
 
-def _parse_file(element: ET.Element) -> VfsFile:
+def _parse_file(element: element_tree.Element) -> VfsFile:
     file_name = element.get("name")
     if not file_name:
         raise ValueError("file without name")
@@ -166,12 +171,12 @@ def human_size(size: int) -> str:
     units = ("B", "K", "M", "G", "T")
     value = float(size)
     for unit in units:
-        if value < 1024.0 or unit == units[-1]:
+        if value < _SIZE_UNIT_BASE or unit == units[-1]:
             if unit == "B":
                 return f"{int(value)}{unit}"
             text = f"{value:.1f}".rstrip("0").rstrip(".")
             return f"{text}{unit}"
-        value /= 1024.0
+        value /= _SIZE_UNIT_BASE
     return f"{size}B"
 
 
